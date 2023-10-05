@@ -1,0 +1,3 @@
+org.doodle.mail.autoconfigure.client.MailClientAutoConfiguration
+org.doodle.mail.autoconfigure.server.MailServerAutoConfiguration
+org.doodle.mail.autoconfigure.vaadin.MailVaadinAutoConfiguration

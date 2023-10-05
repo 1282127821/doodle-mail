@@ -1,3 +1,3 @@
-= Doodle Mail
+= Doodle Mail image:https://github.com/org-doodle/doodle-mail/actions/workflows/ci-maven.yml/badge.svg[link = "https://github.com/org-doodle/doodle-MAIL/actions/workflows/ci-maven.yml"]
 
 Doodle 社区驱动贡献通用邮件业务服务组件。
