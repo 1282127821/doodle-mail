@@ -1,0 +1,3 @@
+= Doodle Mail
+
+Doodle 社区驱动贡献通用邮件业务服务组件。
