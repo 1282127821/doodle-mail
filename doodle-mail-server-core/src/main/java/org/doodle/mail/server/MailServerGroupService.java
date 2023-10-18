@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2022-present Doodle. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.doodle.mail.server;
+
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.doodle.design.mail.MailErrorCode;
+import org.springframework.util.CollectionUtils;
+import reactor.core.publisher.Mono;
+
+@Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@RequiredArgsConstructor
+public class MailServerGroupService {
+  MailServerGroupRepo groupRepo;
+  MailServerRoleService roleService;
+  MailServerContentService contentService;
+  MailServerDeliverService deliverService;
+
+  public Mono<Void> syncMono(String roleId, Object route) {
+    return Mono.fromRunnable(() -> sync(roleId, route));
+  }
+
+  void sync(String roleId, Object route) {
+    MailServerRoleSyncEntity roleSyncEntity = roleService.findOrElseCreate(roleId);
+    List<MailServerGroupEntity> groupList = groupRepo.findAll();
+    if (!CollectionUtils.isEmpty(groupList)) {
+      List<String> contentIds = new ArrayList<>();
+      for (MailServerGroupEntity group : groupList) {
+        if (group.getGroupId() < roleSyncEntity.getSyncId()) {
+          contentIds.add(group.getContentId());
+        }
+        if (group.getGroupId() > roleSyncEntity.getSyncId()) {
+          roleSyncEntity.setSyncId(group.getGroupId());
+        }
+      }
+      if (!CollectionUtils.isEmpty(contentIds)) {
+        List<MailServerContentEntity> contents = contentService.findAllById(contentIds);
+        if (!CollectionUtils.isEmpty(contents)) {
+          roleService.save(roleSyncEntity);
+          MailErrorCode errorCode = deliverService.deliver(roleId, route, contents);
+          if (errorCode == MailErrorCode.FAILURE) {
+            log.error("给玩家 {} 推送 GROUP 邮件发生错误", roleId);
+          }
+        }
+      }
+    }
+  }
+}

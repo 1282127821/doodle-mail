@@ -16,12 +16,16 @@
 package org.doodle.mail.autoconfigure.client;
 
 import org.doodle.broker.client.BrokerClientRSocketRequester;
-import org.doodle.mail.client.MailClientProperties;
+import org.doodle.mail.client.*;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
 @ConditionalOnClass(MailClientProperties.class)
@@ -30,10 +34,37 @@ public class MailClientAutoConfiguration {
 
   @AutoConfiguration
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-  public static class ServletConfiguration {}
+  public static class ServletConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public MailClientServlet mailClientServlet(RestTemplateBuilder builder) {
+      return new MailClientServletImpl(builder.build());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MailClientServletController mailClientServletController(
+        ObjectProvider<MailClientDeliverHandler.Servlet> provider) {
+      return new MailClientServletController(provider.getIfUnique());
+    }
+  }
 
   @AutoConfiguration
   @ConditionalOnClass(BrokerClientRSocketRequester.class)
   @ConditionalOnBean(BrokerClientRSocketRequester.class)
-  public static class RSocketConfiguration {}
+  public static class RSocketConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public MailClientRSocket mailClientRSocket(
+        BrokerClientRSocketRequester requester, MailClientProperties properties) {
+      return new BrokerMailClientRSocket(requester, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MailClientRSocketController mailClientRSocketController(
+        ObjectProvider<MailClientDeliverHandler.RSocket> provider) {
+      return new MailClientRSocketController(provider.getIfUnique());
+    }
+  }
 }

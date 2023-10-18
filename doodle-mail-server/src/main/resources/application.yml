@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      username: doodle
+      password: doodle
+      database: progc-mail
+      authentication-database: admin

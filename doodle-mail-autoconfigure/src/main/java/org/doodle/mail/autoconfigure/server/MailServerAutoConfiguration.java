@@ -15,24 +15,119 @@
  */
 package org.doodle.mail.autoconfigure.server;
 
+import java.util.stream.Collectors;
 import org.doodle.broker.autoconfigure.client.BrokerClientAutoConfiguration;
-import org.doodle.mail.server.MailServerProperties;
+import org.doodle.broker.client.BrokerClientRSocketRequester;
+import org.doodle.mail.server.*;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @AutoConfiguration(after = BrokerClientAutoConfiguration.class)
 @ConditionalOnClass(MailServerProperties.class)
 @EnableConfigurationProperties(MailServerProperties.class)
 @EnableMongoAuditing
+@EnableMongoRepositories(
+    basePackageClasses = {
+      MailServerContentRepo.class,
+      MailServerGroupRepo.class,
+      MailServerRoleSyncRepo.class
+    })
 public class MailServerAutoConfiguration {
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerMapper mailServerMapper() {
+    return new MailServerMapper();
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerRoleService mailServerRoleService(MailServerRoleSyncRepo roleSyncRepo) {
+    return new MailServerRoleService(roleSyncRepo);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerContentService mailServerContentService(MailServerContentRepo contentRepo) {
+    return new MailServerContentService(contentRepo);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerDeliverService mailServerDeliverService(
+      ObjectProvider<MailServerDeliverHandler> provider) {
+    return new MailServerDeliverService(
+        provider
+            .orderedStream()
+            .collect(Collectors.toMap(MailServerDeliverHandler::routeMethod, (v) -> v)));
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerGroupService mailServerGroupService(
+      MailServerGroupRepo groupRepo,
+      MailServerRoleService roleService,
+      MailServerContentService contentService,
+      MailServerDeliverService deliverService) {
+    return new MailServerGroupService(groupRepo, roleService, contentService, deliverService);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerGroupSeqService mailServerGroupSeqService(MongoTemplate mongoTemplate) {
+    return new MailServerGroupSeqService(mongoTemplate);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerGroupListener mailServerGroupListener(
+      MailServerGroupSeqService groupSeqService) {
+    return new MailServerGroupListener(groupSeqService);
+  }
 
   @AutoConfiguration
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-  public static class ServletConfiguration {}
+  public static class ServletConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MailServerServletDeliverHandler mailServerServletDeliverHandler() {
+      return new MailServerServletDeliverHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MailServerGroupServletController mailServerGroupServletController(
+        MailServerGroupService groupService) {
+      return new MailServerGroupServletController(groupService);
+    }
+  }
 
   @AutoConfiguration
-  public static class RSocketConfiguration {}
+  @ConditionalOnClass(BrokerClientRSocketRequester.class)
+  @ConditionalOnBean(BrokerClientRSocketRequester.class)
+  public static class RSocketConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public MailServerRSocketDeliverHandler mailServerRSocketDeliverHandler(
+        BrokerClientRSocketRequester requester, MailServerMapper mapper) {
+      return new MailServerRSocketDeliverHandler(requester, mapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MailServerGroupRSocketController mailServerGroupRSocketController(
+        MailServerMapper mapper, MailServerGroupService groupService) {
+      return new MailServerGroupRSocketController(mapper, groupService);
+    }
+  }
 }
