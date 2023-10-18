@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.doodle.design.mail.MailDeliverOps;
+import org.doodle.design.mail.MailDeliverReply;
 import org.doodle.design.mail.MailDeliverRequest;
 import org.doodle.design.mail.MailErrorCode;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -30,12 +31,13 @@ import reactor.core.publisher.Mono;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class MailClientRSocketController implements MailDeliverOps.RSocket {
+  MailClientMapper mapper;
   MailClientDeliverHandler.RSocket deliverHandler;
 
   @MessageMapping(MailDeliverOps.RSocket.DELIVER_MAPPING)
   @Override
-  public Mono<MailErrorCode> deliver(MailDeliverRequest request) {
-    return Mono.fromCallable(() -> deliverHandler.apply(request));
+  public Mono<MailDeliverReply> deliver(MailDeliverRequest request) {
+    return Mono.fromCallable(() -> deliverHandler.apply(request)).map(mapper::toDeliverReply);
   }
 
   @MessageExceptionHandler(Exception.class)

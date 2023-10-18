@@ -50,7 +50,8 @@ public class MailServerRSocketDeliverHandler implements MailServerDeliverHandler
         .route(MailDeliverOps.RSocket.DELIVER_MAPPING)
         .metadata(frame, BrokerFrameMimeTypes.BROKER_FRAME_MIME_TYPE)
         .data(deliverRequest)
-        .retrieveMono(MailErrorCode.class)
+        .retrieveMono(MailDeliverReply.class)
+        .map(MailDeliverReply::getErrorCode)
         .blockOptional()
         .orElse(MailErrorCode.FAILURE);
   }

@@ -15,8 +15,10 @@
  */
 package org.doodle.mail.server;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -33,18 +35,21 @@ public class MailServerGroupService {
   MailServerRoleService roleService;
   MailServerContentService contentService;
   MailServerDeliverService deliverService;
+  Executor executor;
 
-  public Mono<Void> syncMono(String roleId, Object route) {
-    return Mono.fromRunnable(() -> sync(roleId, route));
+  public Mono<Void> syncMono(String roleId, long roleCreateTime, Object route) {
+    return Mono.fromRunnable(() -> sync(roleId, roleCreateTime, route));
   }
 
-  void sync(String roleId, Object route) {
+  void sync(String roleId, long roleCreateTime, Object route) {
     MailServerRoleSyncEntity roleSyncEntity = roleService.findOrElseCreate(roleId);
     List<MailServerGroupEntity> groupList = groupRepo.findAll();
     if (!CollectionUtils.isEmpty(groupList)) {
       List<String> contentIds = new ArrayList<>();
       for (MailServerGroupEntity group : groupList) {
-        if (group.getGroupId() < roleSyncEntity.getSyncId()) {
+        if (group.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                > roleCreateTime
+            && group.getGroupId() < roleSyncEntity.getSyncId()) {
           contentIds.add(group.getContentId());
         }
         if (group.getGroupId() > roleSyncEntity.getSyncId()) {
@@ -55,10 +60,13 @@ public class MailServerGroupService {
         List<MailServerContentEntity> contents = contentService.findAllById(contentIds);
         if (!CollectionUtils.isEmpty(contents)) {
           roleService.save(roleSyncEntity);
-          MailErrorCode errorCode = deliverService.deliver(roleId, route, contents);
-          if (errorCode == MailErrorCode.FAILURE) {
-            log.error("给玩家 {} 推送 GROUP 邮件发生错误", roleId);
-          }
+          executor.execute(
+              () -> {
+                MailErrorCode errorCode = deliverService.deliver(roleId, route, contents);
+                if (errorCode == MailErrorCode.FAILURE) {
+                  log.error("给玩家 {} 推送 GROUP 邮件发生错误", roleId);
+                }
+              });
         }
       }
     }

@@ -13,24 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.doodle.mail.server;
+package org.doodle.mail.client;
 
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.doodle.design.mail.MailMapper;
 
-@Data
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@ConfigurationProperties(prefix = MailServerProperties.PREFIX)
-public class MailServerProperties {
-  public static final String PREFIX = "doodle.mail.server";
-
-  Deliver deliver = new Deliver();
-
-  @Data
-  @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-  public static class Deliver {
-    int threadNum = 4;
-  }
-}
+public class MailClientMapper extends MailMapper {}

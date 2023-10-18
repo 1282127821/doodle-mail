@@ -35,6 +35,7 @@ public class MailServerGroupRSocketController implements MailRoleSyncOps.RSocket
   @Override
   public Mono<Void> sync(MailRoleSyncRequest request) {
     return Mono.just(request)
-        .flatMap(req -> groupService.syncMono(req.getRoleId(), mapper.fromProto(req.getRoute())));
+        .flatMap(
+            req -> groupService.syncMono(req.getRoleId(), req.getRoleCreateTime(), req.getRoute()));
   }
 }

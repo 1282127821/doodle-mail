@@ -35,7 +35,7 @@ public class MailServerGroupServletController implements MailRoleSyncOps.Servlet
   @PostMapping(MailRoleSyncOps.Servlet.SYNC_MAPPING)
   @Override
   public Result<Void> sync(MailRoleSyncRequest request) {
-    groupService.sync(request.getRoleId(), request.getRoute());
+    groupService.sync(request.getRoleId(), request.getRoleCreateTime(), request.getRoute());
     return Result.ok().body(null);
   }
 

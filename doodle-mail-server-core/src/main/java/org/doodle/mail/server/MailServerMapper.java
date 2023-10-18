@@ -25,7 +25,7 @@ public class MailServerMapper extends MailMapper {
 
   public MailContentInfo toProto(MailServerContentEntity contentEntity) {
     return MailContentInfo.newBuilder()
-        .setMailId(contentEntity.getContentId())
+        .setContentId(contentEntity.getContentId())
         .setTitle(contentEntity.getTitle())
         .setContent(contentEntity.getContent())
         .setAttachment(contentEntity.getAttachment())

@@ -15,6 +15,7 @@
  */
 package org.doodle.mail.autoconfigure.server;
 
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import org.doodle.broker.autoconfigure.client.BrokerClientAutoConfiguration;
 import org.doodle.broker.client.BrokerClientRSocketRequester;
@@ -77,8 +78,14 @@ public class MailServerAutoConfiguration {
       MailServerGroupRepo groupRepo,
       MailServerRoleService roleService,
       MailServerContentService contentService,
-      MailServerDeliverService deliverService) {
-    return new MailServerGroupService(groupRepo, roleService, contentService, deliverService);
+      MailServerDeliverService deliverService,
+      MailServerProperties properties) {
+    return new MailServerGroupService(
+        groupRepo,
+        roleService,
+        contentService,
+        deliverService,
+        Executors.newFixedThreadPool(properties.getDeliver().getThreadNum()));
   }
 
   @Bean

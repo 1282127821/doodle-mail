@@ -15,9 +15,12 @@
  */
 package org.doodle.mail.server;
 
+import java.time.LocalDateTime;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.doodle.design.mail.model.info.MailLifecycleInfo;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -35,4 +38,8 @@ public class MailServerGroupEntity {
   @MongoId long groupId;
   String contentId;
   MailLifecycleInfo lifecycle;
+
+  @Version byte dummy;
+
+  @CreatedDate LocalDateTime createdAt;
 }

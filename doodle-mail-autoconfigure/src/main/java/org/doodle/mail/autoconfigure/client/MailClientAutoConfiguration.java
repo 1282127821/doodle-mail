@@ -32,6 +32,12 @@ import org.springframework.context.annotation.Bean;
 @EnableConfigurationProperties(MailClientProperties.class)
 public class MailClientAutoConfiguration {
 
+  @Bean
+  @ConditionalOnMissingBean
+  public MailClientMapper mailClientMapper() {
+    return new MailClientMapper();
+  }
+
   @AutoConfiguration
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   public static class ServletConfiguration {
@@ -63,8 +69,8 @@ public class MailClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MailClientRSocketController mailClientRSocketController(
-        ObjectProvider<MailClientDeliverHandler.RSocket> provider) {
-      return new MailClientRSocketController(provider.getIfUnique());
+        MailClientMapper mapper, ObjectProvider<MailClientDeliverHandler.RSocket> provider) {
+      return new MailClientRSocketController(mapper, provider.getIfUnique());
     }
   }
 }
