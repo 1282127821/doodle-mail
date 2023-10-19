@@ -38,8 +38,15 @@ public class MailServerDeliverService {
   }
 
   MailServerDeliverHandler findDeliverHandler(Object route) {
-    return route instanceof MailDeliverRoute
-        ? deliverHandlers.get(MailDeliverRoute.RouteMethodCase.RSOCKET)
-        : deliverHandlers.get(MailDeliverRoute.RouteMethodCase.SERVLET);
+    if (route instanceof MailDeliverRoute deliverRoute) {
+      return deliverRoute.hasRsocket()
+          ? deliverHandlers.get(MailDeliverRoute.RouteMethodCase.RSOCKET)
+          : deliverHandlers.get(MailDeliverRoute.RouteMethodCase.SERVLET);
+    } else if (route instanceof org.doodle.design.mail.model.info.MailDeliverRoute deliverRoute) {
+      return Objects.nonNull(deliverRoute.getRsocket())
+          ? deliverHandlers.get(MailDeliverRoute.RouteMethodCase.RSOCKET)
+          : deliverHandlers.get(MailDeliverRoute.RouteMethodCase.SERVLET);
+    }
+    return null;
   }
 }

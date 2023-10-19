@@ -16,6 +16,7 @@
 package org.doodle.mail.server;
 
 import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -39,13 +40,15 @@ public class MailServerRSocketDeliverHandler implements MailServerDeliverHandler
   @Override
   public MailErrorCode deliver(
       String roleId, Object route, List<MailServerContentEntity> contentEntities) {
-    MailDeliverRoute deliverRoute = (MailDeliverRoute) route;
     MailDeliverRequest deliverRequest =
         MailDeliverRequest.newBuilder()
             .setRoleId(roleId)
             .setContent(mapper.toContentInfoList(contentEntities))
             .build();
-    BrokerFrame frame = BrokerFrameUtils.unicast(deliverRoute.getRsocket().getTagsMap());
+    BrokerFrame frame = frame(route);
+    if (Objects.isNull(frame)) {
+      return MailErrorCode.FAILURE;
+    }
     return requester
         .route(MailDeliverOps.RSocket.DELIVER_MAPPING)
         .metadata(frame, BrokerFrameMimeTypes.BROKER_FRAME_MIME_TYPE)
@@ -54,5 +57,14 @@ public class MailServerRSocketDeliverHandler implements MailServerDeliverHandler
         .map(MailDeliverReply::getErrorCode)
         .blockOptional()
         .orElse(MailErrorCode.FAILURE);
+  }
+
+  BrokerFrame frame(Object route) {
+    if (route instanceof MailDeliverRoute deliverRoute) {
+      return BrokerFrameUtils.unicast(deliverRoute.getRsocket().getTagsMap());
+    } else if (route instanceof org.doodle.design.mail.model.info.MailDeliverRoute deliverRoute) {
+      return BrokerFrameUtils.unicast(deliverRoute.getRsocket().getTags());
+    }
+    return null;
   }
 }
