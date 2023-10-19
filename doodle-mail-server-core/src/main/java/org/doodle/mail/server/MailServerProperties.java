@@ -28,9 +28,18 @@ public class MailServerProperties {
 
   Deliver deliver = new Deliver();
 
+  Push push = new Push();
+
   @Data
   @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
   public static class Deliver {
     int threadNum = 4;
+  }
+
+  @Data
+  @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+  public static class Push {
+    long maxRetryTime = 10;
+    long scanInterval = 5 * 60; // 秒
   }
 }

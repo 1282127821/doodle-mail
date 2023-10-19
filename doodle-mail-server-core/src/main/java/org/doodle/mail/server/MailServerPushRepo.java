@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.doodle.mail.server.single;
+package org.doodle.mail.server;
 
-import org.doodle.mail.server.*;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.util.List;
+import org.doodle.design.mail.MailState;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-@SpringBootApplication
-public class MailServerApplication {
-  public static void main(String[] args) {
-    SpringApplication.run(MailServerApplication.class, args);
-  }
+@Repository
+public interface MailServerPushRepo extends MongoRepository<MailServerPushEntity, String> {
+
+  List<MailServerPushEntity> findAllByState(MailState state);
 }

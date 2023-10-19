@@ -40,7 +40,8 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
     basePackageClasses = {
       MailServerContentRepo.class,
       MailServerGroupRepo.class,
-      MailServerRoleSyncRepo.class
+      MailServerRoleSyncRepo.class,
+      MailServerPushRepo.class
     })
 public class MailServerAutoConfiguration {
 
@@ -70,6 +71,29 @@ public class MailServerAutoConfiguration {
         provider
             .orderedStream()
             .collect(Collectors.toMap(MailServerDeliverHandler::routeMethod, (v) -> v)));
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerPushService mailServerPushService(
+      MailServerPushRepo pushRepo,
+      MailServerContentService contentService,
+      MailServerDeliverService deliverService,
+      MailServerProperties properties) {
+    return new MailServerPushService(pushRepo, contentService, deliverService, properties);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerPushListener mailServerPushListener(MailServerPushService pushService) {
+    return new MailServerPushListener(pushService);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerPushScanner mailServerPushScanner(
+      MailServerPushService pushService, MailServerProperties properties) {
+    return new MailServerPushScanner(pushService, properties);
   }
 
   @Bean

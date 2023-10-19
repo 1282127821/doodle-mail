@@ -15,21 +15,37 @@
  */
 package org.doodle.mail.server;
 
-import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.SmartLifecycle;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
-public class MailServerContentService {
-  MailServerContentRepo contentRepo;
+public class MailServerPushScanner implements SmartLifecycle {
+  ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+  MailServerPushService pushService;
+  MailServerProperties properties;
 
-  public List<MailServerContentEntity> findAllById(Iterable<String> ids) {
-    return contentRepo.findAllById(ids);
+  @Override
+  public void start() {
+    log.info("启动推送邮件扫描任务");
+    executorService.scheduleAtFixedRate(
+        pushService::scan, 0, properties.getPush().getScanInterval(), TimeUnit.SECONDS);
   }
 
-  public MailServerContentEntity findOrElseThrow(String contentId) {
-    return contentRepo.findById(contentId).orElseThrow();
+  @Override
+  public void stop() {
+    executorService.shutdownNow();
+  }
+
+  @Override
+  public boolean isRunning() {
+    return false;
   }
 }

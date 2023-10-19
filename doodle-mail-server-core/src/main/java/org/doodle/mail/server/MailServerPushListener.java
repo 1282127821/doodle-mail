@@ -15,21 +15,26 @@
  */
 package org.doodle.mail.server;
 
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.doodle.design.mail.MailState;
+import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
+import org.springframework.data.mongodb.core.mapping.event.AfterSaveEvent;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
-public class MailServerContentService {
-  MailServerContentRepo contentRepo;
+public class MailServerPushListener extends AbstractMongoEventListener<MailServerPushEntity> {
+  MailServerPushService pushService;
 
-  public List<MailServerContentEntity> findAllById(Iterable<String> ids) {
-    return contentRepo.findAllById(ids);
-  }
-
-  public MailServerContentEntity findOrElseThrow(String contentId) {
-    return contentRepo.findById(contentId).orElseThrow();
+  @Override
+  public void onAfterSave(AfterSaveEvent<MailServerPushEntity> event) {
+    MailServerPushEntity pushEntity = event.getSource();
+    if (pushEntity.getState() == MailState.READY) {
+      log.info("推送邮件: {}", pushEntity);
+      pushService.push(pushEntity);
+    }
   }
 }
