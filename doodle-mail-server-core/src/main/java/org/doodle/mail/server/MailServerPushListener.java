@@ -33,8 +33,12 @@ public class MailServerPushListener extends AbstractMongoEventListener<MailServe
   public void onAfterSave(AfterSaveEvent<MailServerPushEntity> event) {
     MailServerPushEntity pushEntity = event.getSource();
     if (pushEntity.getState() == MailState.READY) {
-      log.info("推送邮件: {}", pushEntity);
+      log.info("开始推送邮件: {}", pushEntity);
       pushService.push(pushEntity);
+    } else if (pushEntity.getState() == MailState.COMPLETED) {
+      log.info("推送邮件成功: {}", pushEntity);
+    } else if (pushEntity.getState() == MailState.RETRYING) {
+      log.info("推送邮件失败: {}", pushEntity);
     }
   }
 }
