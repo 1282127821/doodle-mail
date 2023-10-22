@@ -40,6 +40,7 @@ public class MailServerProperties {
   @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
   public static class Push {
     long maxRetryTime = 10;
+    long scanDelay = 10;
     long scanInterval = 5 * 60; // 秒
   }
 }

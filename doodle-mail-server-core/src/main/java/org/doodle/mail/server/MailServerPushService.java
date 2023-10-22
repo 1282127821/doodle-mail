@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.doodle.design.mail.MailErrorCode;
+import org.doodle.design.mail.MailScheduleState;
 import org.doodle.design.mail.MailState;
 import org.doodle.design.mail.model.info.MailTargetInfo;
 import org.springframework.util.CollectionUtils;
@@ -31,41 +32,88 @@ import org.springframework.util.CollectionUtils;
 @RequiredArgsConstructor
 public class MailServerPushService {
   MailServerPushRepo pushRepo;
+  MailServerPushScheduleRepo scheduleRepo;
   MailServerContentService contentService;
   MailServerDeliverService deliverService;
   MailServerProperties properties;
 
-  public void push(MailServerPushEntity pushEntity) {
-    MailServerContentEntity contentEntity =
-        contentService.findOrElseThrow(pushEntity.getContentId());
-    pushEntity.setState(MailState.SENDING);
-    pushRepo.save(pushEntity);
+  public void schedule(MailServerPushScheduleEntity scheduleEntity) {
+    pushRepo
+        .findById(scheduleEntity.getPushId())
+        .ifPresentOrElse(
+            pushEntity -> schedule(scheduleEntity, pushEntity),
+            () -> scheduleRepo.delete(scheduleEntity));
+  }
+
+  private void schedule(
+      MailServerPushScheduleEntity scheduleEntity, MailServerPushEntity pushEntity) {
+    if (pushEntity.getState() != MailState.SCHEDULING) {
+      log.info("删除推送调度, 当前推送邮件状态: {}", pushEntity.getState());
+      scheduleRepo.delete(scheduleEntity);
+    }
+
+    contentService
+        .findById(pushEntity.getContentId())
+        .ifPresentOrElse(
+            contentEntity -> schedule(scheduleEntity, pushEntity, contentEntity),
+            () -> scheduleRepo.delete(scheduleEntity));
+  }
+
+  private void schedule(
+      MailServerPushScheduleEntity scheduleEntity,
+      MailServerPushEntity pushEntity,
+      MailServerContentEntity contentEntity) {
+
     MailTargetInfo targetInfo = pushEntity.getTargetInfo();
     MailErrorCode errorCode =
         deliverService.deliver(
             targetInfo.getRoleId(), targetInfo.getRoute(), List.of(contentEntity));
     if (errorCode == MailErrorCode.FAILURE) {
-      if (pushEntity.getRetryTime() >= properties.getPush().getMaxRetryTime()) {
+      if (scheduleEntity.getRetryTime() >= properties.getPush().getMaxRetryTime()) {
+        log.info("邮件推送调度已达到最大重试次数, 进入IDLE状态并删除调度. {}", scheduleEntity);
         pushEntity.setState(MailState.DIE);
+        scheduleRepo.delete(scheduleEntity);
       } else {
         if (pushEntity.getSendTime() != null) {
-          pushEntity.setRetryTime(pushEntity.getRetryTime() + 1);
+          scheduleEntity.setRetryTime(scheduleEntity.getRetryTime() + 1);
         }
-        pushEntity.setState(MailState.RETRYING);
+        scheduleEntity.setState(MailScheduleState.IDLE);
+        scheduleRepo.save(scheduleEntity);
       }
     } else {
+      log.info("邮件推送调度已完成并删除. {}", scheduleEntity);
       pushEntity.setState(MailState.COMPLETED);
+      scheduleRepo.delete(scheduleEntity);
     }
     pushEntity.setSendTime(Instant.now());
     pushRepo.save(pushEntity);
   }
 
-  public void scan() {
-    List<MailServerPushEntity> retryingEntity = pushRepo.findAllByState(MailState.RETRYING);
-    if (!CollectionUtils.isEmpty(retryingEntity)) {
-      log.info("扫描到需要重试推送任务: {}", retryingEntity);
-      retryingEntity.forEach(r -> r.setState(MailState.READY));
-      pushRepo.saveAll(retryingEntity);
+  public void schedule(MailServerPushEntity pushEntity) {
+    scheduleRepo
+        .findByPushId(pushEntity.getPushId())
+        .ifPresentOrElse(
+            scheduleEntity -> log.info("邮件调度已经开始: {}", scheduleEntity),
+            () -> scheduleNew(pushEntity));
+  }
+
+  private void scheduleNew(MailServerPushEntity pushEntity) {
+    log.info("推送邮件调度: {}", pushEntity);
+    MailServerPushScheduleEntity scheduleEntity =
+        MailServerPushScheduleEntity.builder()
+            .pushId(pushEntity.getPushId())
+            .state(MailScheduleState.SENDING)
+            .build();
+    scheduleRepo.save(scheduleEntity);
+  }
+
+  public void scanSchedules() {
+    List<MailServerPushScheduleEntity> scheduleEntities =
+        scheduleRepo.findAllByState(MailScheduleState.IDLE);
+    if (!CollectionUtils.isEmpty(scheduleEntities)) {
+      log.info("扫描到需要重试推送任务: {}", scheduleEntities);
+      scheduleEntities.forEach(schedule -> schedule.setState(MailScheduleState.SENDING));
+      scheduleRepo.saveAll(scheduleEntities);
     }
   }
 }

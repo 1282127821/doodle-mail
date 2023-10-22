@@ -19,21 +19,22 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.doodle.design.mail.MailState;
+import org.doodle.design.mail.MailScheduleState;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
 import org.springframework.data.mongodb.core.mapping.event.AfterSaveEvent;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
-public class MailServerPushListener extends AbstractMongoEventListener<MailServerPushEntity> {
+public class MailServerPushScheduleListener
+    extends AbstractMongoEventListener<MailServerPushScheduleEntity> {
   MailServerPushService pushService;
 
   @Override
-  public void onAfterSave(AfterSaveEvent<MailServerPushEntity> event) {
-    MailServerPushEntity pushEntity = event.getSource();
-    if (pushEntity.getState() == MailState.SCHEDULING) {
-      pushService.schedule(pushEntity);
+  public void onAfterSave(AfterSaveEvent<MailServerPushScheduleEntity> event) {
+    MailServerPushScheduleEntity scheduleEntity = event.getSource();
+    if (scheduleEntity.getState() == MailScheduleState.SENDING) {
+      pushService.schedule(scheduleEntity);
     }
   }
 }

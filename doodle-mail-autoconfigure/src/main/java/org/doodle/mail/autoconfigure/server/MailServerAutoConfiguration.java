@@ -41,7 +41,8 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
       MailServerContentRepo.class,
       MailServerGroupRepo.class,
       MailServerRoleSyncRepo.class,
-      MailServerPushRepo.class
+      MailServerPushRepo.class,
+      MailServerPushScheduleRepo.class
     })
 public class MailServerAutoConfiguration {
 
@@ -77,16 +78,25 @@ public class MailServerAutoConfiguration {
   @ConditionalOnMissingBean
   public MailServerPushService mailServerPushService(
       MailServerPushRepo pushRepo,
+      MailServerPushScheduleRepo scheduleRepo,
       MailServerContentService contentService,
       MailServerDeliverService deliverService,
       MailServerProperties properties) {
-    return new MailServerPushService(pushRepo, contentService, deliverService, properties);
+    return new MailServerPushService(
+        pushRepo, scheduleRepo, contentService, deliverService, properties);
   }
 
   @Bean
   @ConditionalOnMissingBean
   public MailServerPushListener mailServerPushListener(MailServerPushService pushService) {
     return new MailServerPushListener(pushService);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public MailServerPushScheduleListener mailServerPushScheduleListener(
+      MailServerPushService pushService) {
+    return new MailServerPushScheduleListener(pushService);
   }
 
   @Bean

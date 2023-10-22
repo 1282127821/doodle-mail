@@ -15,13 +15,13 @@
  */
 package org.doodle.mail.server;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.doodle.design.mail.MailState;
-import org.doodle.design.mail.model.info.MailTargetInfo;
+import org.doodle.design.mail.MailScheduleState;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -32,15 +32,19 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = MailServerPushEntity.COLLECTION)
-public class MailServerPushEntity {
-  public static final String COLLECTION = "mail-pushs";
+@Document(collection = MailServerPushScheduleEntity.COLLECTION)
+public class MailServerPushScheduleEntity {
+  public static final String COLLECTION = "mail-push-schedules";
 
-  @MongoId String pushId;
-  MailTargetInfo targetInfo;
-  String contentId;
-  MailState state = MailState.PENDING;
-  Instant sendTime;
+  @MongoId String scheduleId;
+
+  @Indexed String pushId;
+
+  MailScheduleState state;
+
+  long retryTime;
 
   @CreatedDate LocalDateTime createdAt;
+
+  @LastModifiedDate LocalDateTime modifiedAt;
 }

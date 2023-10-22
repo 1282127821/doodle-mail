@@ -17,20 +17,14 @@ package org.doodle.mail.server;
 
 import java.util.List;
 import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
+import org.doodle.design.mail.MailScheduleState;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequiredArgsConstructor
-public class MailServerContentService {
-  MailServerContentRepo contentRepo;
+@Repository
+public interface MailServerPushScheduleRepo
+    extends MongoRepository<MailServerPushScheduleEntity, String> {
+  List<MailServerPushScheduleEntity> findAllByState(MailScheduleState state);
 
-  public List<MailServerContentEntity> findAllById(Iterable<String> ids) {
-    return contentRepo.findAllById(ids);
-  }
-
-  public Optional<MailServerContentEntity> findById(String contentId) {
-    return contentRepo.findById(contentId);
-  }
+  Optional<MailServerPushScheduleEntity> findByPushId(String pushId);
 }

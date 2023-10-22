@@ -34,9 +34,15 @@ public class MailServerPushScanner implements SmartLifecycle {
 
   @Override
   public void start() {
-    log.info("启动推送邮件扫描任务");
+    log.info(
+        "启动推送邮件扫描任务, 延迟: {}秒, 间隔: {} 秒",
+        properties.getPush().getScanDelay(),
+        properties.getPush().getScanInterval());
     executorService.scheduleAtFixedRate(
-        pushService::scan, 0, properties.getPush().getScanInterval(), TimeUnit.SECONDS);
+        pushService::scanSchedules,
+        properties.getPush().getScanDelay(),
+        properties.getPush().getScanInterval(),
+        TimeUnit.SECONDS);
   }
 
   @Override
