@@ -109,12 +109,14 @@ public class MailServerAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   public MailServerGroupService mailServerGroupService(
+      MongoTemplate mongoTemplate,
       MailServerGroupRepo groupRepo,
       MailServerRoleService roleService,
       MailServerContentService contentService,
       MailServerDeliverService deliverService,
       MailServerProperties properties) {
     return new MailServerGroupService(
+        mongoTemplate,
         groupRepo,
         roleService,
         contentService,
@@ -124,14 +126,7 @@ public class MailServerAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  public MailServerGroupSeqService mailServerGroupSeqService(MongoTemplate mongoTemplate) {
-    return new MailServerGroupSeqService(mongoTemplate);
-  }
-
-  @Bean
-  @ConditionalOnMissingBean
-  public MailServerGroupListener mailServerGroupListener(
-      MailServerGroupSeqService groupSeqService) {
+  public MailServerGroupListener mailServerGroupListener(MailServerGroupService groupSeqService) {
     return new MailServerGroupListener(groupSeqService);
   }
 

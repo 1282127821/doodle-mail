@@ -24,13 +24,13 @@ import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class MailServerGroupListener extends AbstractMongoEventListener<MailServerGroupEntity> {
-  MailServerGroupSeqService groupSeqService;
+  MailServerGroupService groupService;
 
   @Override
   public void onBeforeConvert(BeforeConvertEvent<MailServerGroupEntity> event) {
     MailServerGroupEntity groupEntity = event.getSource();
     if (groupEntity.getGroupId() < 1) {
-      groupEntity.setGroupId(groupSeqService.generateSeq());
+      groupEntity.setGroupId(groupService.generateSeq());
     }
   }
 }

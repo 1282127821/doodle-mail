@@ -25,18 +25,19 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PROTECTED, makeFinal = true)
 @RequiredArgsConstructor
-public class MailServerGroupSeqService {
+public abstract class MailServerSeqService {
   MongoTemplate mongoTemplate;
+  String seqName;
 
   public long generateSeq() {
-    MailServerGroupSeqEntity groupSeqEntity =
+    MailServerSeqEntity seqEntity =
         mongoTemplate.findAndModify(
-            Query.query(Criteria.where("id").is(MailServerGroupSeqEntity.COLLECTION)),
+            Query.query(Criteria.where("id").is(seqName)),
             new Update().inc("seq", 1),
             FindAndModifyOptions.options().returnNew(true).upsert(true),
-            MailServerGroupSeqEntity.class);
-    return Objects.nonNull(groupSeqEntity) ? groupSeqEntity.getSeq() : 1;
+            MailServerSeqEntity.class);
+    return Objects.nonNull(seqEntity) ? seqEntity.getSeq() : 1;
   }
 }

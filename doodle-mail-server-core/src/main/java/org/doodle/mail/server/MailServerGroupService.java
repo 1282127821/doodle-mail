@@ -20,22 +20,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.doodle.design.mail.MailErrorCode;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequiredArgsConstructor
-public class MailServerGroupService {
+public class MailServerGroupService extends MailServerSeqService {
   MailServerGroupRepo groupRepo;
   MailServerRoleService roleService;
   MailServerContentService contentService;
   MailServerDeliverService deliverService;
   Executor executor;
+
+  public MailServerGroupService(
+      MongoTemplate mongoTemplate,
+      MailServerGroupRepo groupRepo,
+      MailServerRoleService roleService,
+      MailServerContentService contentService,
+      MailServerDeliverService deliverService,
+      Executor executor) {
+    super(mongoTemplate, MailServerGroupEntity.COLLECTION);
+    this.groupRepo = groupRepo;
+    this.roleService = roleService;
+    this.contentService = contentService;
+    this.deliverService = deliverService;
+    this.executor = executor;
+  }
 
   public Mono<Void> syncMono(String roleId, long roleCreateTime, Object route) {
     return Mono.fromRunnable(() -> sync(roleId, roleCreateTime, route));

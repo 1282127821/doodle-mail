@@ -28,10 +28,10 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = MailServerGroupSeqEntity.COLLECTION)
-public class MailServerGroupSeqEntity {
+@Document(collection = MailServerSeqEntity.COLLECTION)
+public class MailServerSeqEntity {
 
-  @Transient public static final String COLLECTION = "mail-group-seq";
+  @Transient public static final String COLLECTION = "mail-seqs";
 
   @MongoId String id;
   long seq;
