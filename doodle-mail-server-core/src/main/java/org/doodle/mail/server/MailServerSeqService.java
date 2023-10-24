@@ -34,7 +34,7 @@ public abstract class MailServerSeqService {
   public long generateSeq() {
     MailServerSeqEntity seqEntity =
         mongoTemplate.findAndModify(
-            Query.query(Criteria.where("id").is(seqName)),
+            Query.query(Criteria.where("_id").is(seqName)),
             new Update().inc("seq", 1),
             FindAndModifyOptions.options().returnNew(true).upsert(true),
             MailServerSeqEntity.class);
