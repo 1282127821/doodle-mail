@@ -15,10 +15,13 @@
  */
 package org.doodle.mail.autoconfigure.vaadin;
 
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import org.doodle.boot.vaadin.EnableVaadin;
 import org.doodle.boot.vaadin.views.VaadinSideNavItemSupplier;
 import org.doodle.mail.vaadin.MailVaadinProperties;
+import org.doodle.mail.vaadin.views.MailVaadinGroupView;
+import org.doodle.mail.vaadin.views.MailVaadinPushView;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -34,6 +37,9 @@ public class MailVaadinAutoConfiguration {
   public VaadinSideNavItemSupplier mailSideNavView() {
     return (authenticationContext) -> {
       SideNavItem item = new SideNavItem("邮件组件");
+      item.setPrefixComponent(VaadinIcon.MAILBOX.create());
+      item.addItem(new SideNavItem("全服邮件", MailVaadinGroupView.class, VaadinIcon.GLOBE.create()));
+      item.addItem(new SideNavItem("推送邮件", MailVaadinPushView.class, VaadinIcon.MAILBOX.create()));
       return item;
     };
   }
